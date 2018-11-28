@@ -15,7 +15,7 @@ cache_dir=$2/php
 mkdir -p "$cache_dir"
 env_dir=${3:-} # Anvil has none
 bp_dir=$(cd $(dirname $0); cd ..; pwd)
-
+echo "Testing ........"
 export BPLOG_PREFIX="buildpack.php"
 export BUILDPACK_LOG_FILE=${BUILDPACK_LOG_FILE:-/dev/null}
 
@@ -47,7 +47,7 @@ source $bp_dir/bin/util/failures.sh
 source $bp_dir/bin/util/newrelic.sh
 source $bp_dir/bin/util/blackfire.sh
 
-# if this is set it prevents Git clones (e.g. for Composer installs from source) during the build in some circumstances, and it is set in SSH Git deploys to Heroku
+# if this is set it prevents Git clones (e.g. for Composer installs from ) during the build in some circumstances, and it is set in SSH Git deploys to Heroku
 unset GIT_DIR
 
 cd $build_dir
@@ -734,15 +734,21 @@ fi
 # reset COMPOSER for the platform install step
 COMPOSER_bak="$COMPOSER"
 export COMPOSER=composer.json
-
 # unless we're running a CI build...
 if [[ "${HEROKU_PHP_INSTALL_DEV+CI}" != "CI" ]]; then
 	status "Checking for additional extensions to install..."
+	echo "Checking for additional extensions to install..."
 	# special treatment for Blackfire; we enable it if we detect a server id and a server token for it
 	install_blackfire_ext
 	# special treatment for New Relic; we enable it if we detect a license key for it
 	install_newrelic_ext
 	install_newrelic_userini
+fi
+
+# only perform if we're not running in Heroku CI
+if [[ ! -z "$HEROKU_PHP_INSTALL_DEV" ]]; then
+    source $bp_dir/bin/util/opcache.sh
+    source $bp_dir/bin/util/xdebug.sh
 fi
 
 # done with platform installs; restore COMPOSER from previous value
